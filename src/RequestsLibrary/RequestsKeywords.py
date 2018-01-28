@@ -478,9 +478,15 @@ class RequestsKeywords(object):
         """
         session = self._cache.switch(alias)
         redir = True if allow_redirects is None else allow_redirects
-
-        response = self._get_request(
-            session, uri, params, headers, json, redir, timeout)
+        
+        exception_retries = 3
+        while(exception_retries > 0):
+            try:
+                response = self._get_request(
+                    session, uri, params, headers, json, redir, timeout)
+            except requests.exceptions.RequestException as err:
+                exception_retries = exception_retries - 1
+            
 
         logger.info(
             'Get Request using : alias=%s, uri=%s, headers=%s json=%s' %
