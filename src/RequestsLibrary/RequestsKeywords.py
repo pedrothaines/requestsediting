@@ -484,10 +484,14 @@ class RequestsKeywords(object):
             try:
                 response = self._get_request(
                     session, uri, params, headers, json, redir, timeout)
+                exception_retries = 0
             except requests.exceptions.RequestException as err:
                 exception_retries = exception_retries - 1
+                #logger.error("[GET] Response error! Exception retries remaining: "+str(exception_retries))
+                #logger.error(err)
+                if exception_retries == 0:
+                    raise
             
-
         logger.info(
             'Get Request using : alias=%s, uri=%s, headers=%s json=%s' %
             (alias, uri, headers, json))
@@ -565,16 +569,27 @@ class RequestsKeywords(object):
             data = self._format_data_according_to_header(session, data, headers)
         redir = True if allow_redirects is None else allow_redirects
 
-        response = self._body_request(
-            "post",
-            session,
-            uri,
-            data,
-            params,
-            files,
-            headers,
-            redir,
-            timeout)
+        exception_retries = 3
+        while(exception_retries > 0):
+            try:
+                response = self._body_request(
+                    "post",
+                    session,
+                    uri,
+                    data,
+                    params,
+                    files,
+                    headers,
+                    redir,
+                    timeout)
+                exception_retries = 0
+            except requests.exceptions.RequestException as err:
+                exception_retries = exception_retries - 1
+                #logger.error("[POST] Response error! Exception retries remaining: "+str(exception_retries))
+                #logger.error(err)
+                if exception_retries == 0:
+                    raise
+                    
         dataStr = self._format_data_to_log_string_according_to_header(data, headers)
         logger.info('Post Request using : alias=%s, uri=%s, data=%s, headers=%s, files=%s, allow_redirects=%s '
                     % (alias, uri, dataStr, headers, files, redir))
@@ -759,18 +774,28 @@ class RequestsKeywords(object):
         session = self._cache.switch(alias)
         data = self._format_data_according_to_header(session, data, headers)
         redir = True if allow_redirects is None else allow_redirects
-
-        response = self._body_request(
-            "put",
-            session,
-            uri,
-            data,
-            params,
-            files,
-            headers,
-            redir,
-            timeout)
-
+                    
+        exception_retries = 3
+        while(exception_retries > 0):
+            try:
+                response = self._body_request(
+                    "put",
+                    session,
+                    uri,
+                    data,
+                    params,
+                    files,
+                    headers,
+                    redir,
+                    timeout)
+                exception_retries = 0
+            except requests.exceptions.RequestException as err:
+                exception_retries = exception_retries - 1
+                #logger.error("[PUT] Response error! Exception retries remaining: "+str(exception_retries))
+                #logger.error(err)
+                if exception_retries == 0:
+                    raise
+                    
         if isinstance(data, bytes):
             data = data.decode('utf-8')
         logger.info('Put Request using : alias=%s, uri=%s, data=%s, \
